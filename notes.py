@@ -119,6 +119,45 @@ def sanitize_filename(name):
     return "".join(c if c.isalnum() or c in "-_ " else "" for c in name).strip().replace(" ", "_")
 
 
+def search_notes(keyword):
+    """Search notes by keyword in title or content (case-insensitive)."""
+    ensure_notes_dir()
+    notes = sorted(
+        [f for f in os.listdir(NOTES_DIR) if f.endswith(".md")],
+        reverse=True,
+    )
+
+    if not notes:
+        print("No notes found.")
+        return
+
+    keyword_lower = keyword.lower()
+    matches = []
+
+    for note in notes:
+        filepath = os.path.join(NOTES_DIR, note)
+        title = get_note_title(filepath)
+        try:
+            with open(filepath, "r") as f:
+                content = f.read()
+        except (IOError, OSError):
+            content = ""
+
+        if keyword_lower in title.lower() or keyword_lower in content.lower():
+            matches.append((note, title))
+
+    if not matches:
+        print(f"No notes found matching '{keyword}'.")
+        return
+
+    print(f"\n{'#':<4} {'Title':<40} {'Date':<12}")
+    print("-" * 56)
+    for i, (note, title) in enumerate(matches, 1):
+        date = note[:8]
+        formatted_date = f"{date[:4]}-{date[4:6]}-{date[6:8]}"
+        print(f"{i:<4} {title:<40} {formatted_date:<12}")
+
+
 def print_help():
     """Print usage information."""
     print("""
@@ -128,6 +167,7 @@ Markdown Note Keeper
 Usage:
   python notes.py create <title> [content]   Create a new note
   python notes.py list                        List all notes
+  python notes.py search <keyword>            Search notes by keyword
   python notes.py view <number|filename>      View a note
   python notes.py delete <number|filename>    Delete a note
   python notes.py help                        Show this help
@@ -151,6 +191,12 @@ def main():
 
     elif command == "list":
         list_notes()
+
+    elif command == "search":
+        if len(sys.argv) < 3:
+            print("Usage: python notes.py search <keyword>")
+            return
+        search_notes(sys.argv[2])
 
     elif command == "view":
         if len(sys.argv) < 3:
