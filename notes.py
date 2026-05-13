@@ -147,7 +147,7 @@ def search_notes(keyword):
             matches.append((note, title))
 
     if not matches:
-        print(f"No notes found matching '{keyword}'.")
+        print(f"No notes matching '{keyword}' found.")
         return
 
     print(f"\n{'#':<4} {'Title':<40} {'Date':<12}")
