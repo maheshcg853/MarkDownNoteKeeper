@@ -15,6 +15,9 @@ def ensure_notes_dir():
 
 def create_note(title, content=""):
     """Create a new markdown note."""
+    if not title or not title.strip() or not sanitize_filename(title):
+        print("Error: Title cannot be empty.")
+        return None
     ensure_notes_dir()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{timestamp}_{sanitize_filename(title)}.md"
@@ -186,6 +189,9 @@ def main():
             print("Usage: python notes.py create <title> [content]")
             return
         title = sys.argv[2]
+        if not title.strip():
+            print("Error: Title cannot be empty.")
+            return
         content = " ".join(sys.argv[3:]) if len(sys.argv) > 3 else ""
         create_note(title, content)
 
