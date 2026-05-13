@@ -7,17 +7,56 @@ from datetime import datetime
 
 NOTES_DIR = "my_notes"
 
+TEMPLATES = {
+    "meeting": {
+        "description": "Meeting notes with attendees, agenda, and action items",
+        "content": (
+            "## Attendees\n\n- \n\n"
+            "## Agenda\n\n1. \n\n"
+            "## Discussion Notes\n\n\n\n"
+            "## Action Items\n\n- [ ] \n"
+        ),
+    },
+    "todo": {
+        "description": "Todo list with priority sections",
+        "content": (
+            "## High Priority\n\n- [ ] \n\n"
+            "## Medium Priority\n\n- [ ] \n\n"
+            "## Low Priority\n\n- [ ] \n"
+        ),
+    },
+    "journal": {
+        "description": "Daily journal entry with prompts",
+        "content": (
+            "## How I'm Feeling\n\n\n\n"
+            "## What I Accomplished Today\n\n- \n\n"
+            "## What I Learned\n\n- \n\n"
+            "## Goals for Tomorrow\n\n- \n"
+        ),
+    },
+}
+
 
 def ensure_notes_dir():
     """Create the notes directory if it doesn't exist."""
     os.makedirs(NOTES_DIR, exist_ok=True)
 
 
-def create_note(title, content=""):
-    """Create a new markdown note."""
+def create_note(title, content="", template_name=None):
+    """Create a new markdown note, optionally using a template."""
     if not title or not title.strip() or not sanitize_filename(title):
         print("Error: Title cannot be empty.")
         return None
+
+    if template_name:
+        if template_name not in TEMPLATES:
+            print(f"Error: Unknown template '{template_name}'.")
+            print("Available templates: " + ", ".join(sorted(TEMPLATES.keys())))
+            return None
+        template_content = TEMPLATES[template_name]["content"]
+    else:
+        template_content = None
+
     ensure_notes_dir()
     timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
     filename = f"{timestamp}_{sanitize_filename(title)}.md"
@@ -26,6 +65,8 @@ def create_note(title, content=""):
     with open(filepath, "w") as f:
         f.write(f"# {title}\n\n")
         f.write(f"*Created: {datetime.now().strftime('%Y-%m-%d %H:%M')}*\n\n")
+        if template_content:
+            f.write(template_content)
         if content:
             f.write(content + "\n")
 
@@ -161,6 +202,16 @@ def search_notes(keyword):
         print(f"{i:<4} {title:<40} {formatted_date:<12}")
 
 
+def list_templates():
+    """List all available note templates."""
+    print("\nAvailable Templates")
+    print("=" * 40)
+    for name in sorted(TEMPLATES.keys()):
+        description = TEMPLATES[name]["description"]
+        print(f"  {name:<12} {description}")
+    print(f"\nUsage: python notes.py create --template <name> \"<title>\"")
+
+
 def print_help():
     """Print usage information."""
     print("""
@@ -168,12 +219,19 @@ Markdown Note Keeper
 ====================
 
 Usage:
-  python notes.py create <title> [content]   Create a new note
-  python notes.py list                        List all notes
-  python notes.py search <keyword>            Search notes by keyword
-  python notes.py view <number|filename>      View a note
-  python notes.py delete <number|filename>    Delete a note
-  python notes.py help                        Show this help
+  python notes.py create <title> [content]               Create a new note
+  python notes.py create --template <name> <title>       Create a note from a template
+  python notes.py templates                              List available templates
+  python notes.py list                                   List all notes
+  python notes.py search <keyword>                       Search notes by keyword
+  python notes.py view <number|filename>                 View a note
+  python notes.py delete <number|filename>               Delete a note
+  python notes.py help                                   Show this help
+
+Templates:
+  meeting    Meeting notes with attendees, agenda, and action items
+  todo       Todo list with priority sections
+  journal    Daily journal entry with prompts
 """)
 
 
@@ -186,14 +244,29 @@ def main():
 
     if command == "create":
         if len(sys.argv) < 3:
-            print("Usage: python notes.py create <title> [content]")
+            print("Usage: python notes.py create [--template <name>] <title> [content]")
             return
-        title = sys.argv[2]
+
+        # Parse --template flag
+        template_name = None
+        args = sys.argv[2:]
+
+        if args[0] == "--template":
+            if len(args) < 3:
+                print("Usage: python notes.py create --template <name> <title> [content]")
+                return
+            template_name = args[1]
+            args = args[2:]
+
+        title = args[0]
         if not title.strip():
             print("Error: Title cannot be empty.")
             return
-        content = " ".join(sys.argv[3:]) if len(sys.argv) > 3 else ""
-        create_note(title, content)
+        content = " ".join(args[1:]) if len(args) > 1 else ""
+        create_note(title, content, template_name=template_name)
+
+    elif command == "templates":
+        list_templates()
 
     elif command == "list":
         list_notes()
