@@ -54,6 +54,21 @@ class TestNotes(unittest.TestCase):
         result = notes.create_note("   ")
         self.assertIsNone(result)
 
+    def test_create_note_special_characters_in_title(self):
+        """Test that create_note works with special characters in the title."""
+        title = "My Note! @#$% Special &*"
+        filename = notes.create_note(title, "Special content")
+        # Verify valid filename is returned
+        self.assertIsNotNone(filename)
+        self.assertTrue(filename.endswith(".md"))
+        # Verify file is created on disk
+        filepath = os.path.join(self.test_dir, filename)
+        self.assertTrue(os.path.exists(filepath))
+        # Verify note content contains the original title with special characters
+        with open(filepath, "r") as f:
+            content = f.read()
+        self.assertIn(f"# {title}", content)
+
     def test_list_notes_empty(self):
         """Test list_notes with no notes present."""
         # Should not raise an error
